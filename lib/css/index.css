@@ -110,7 +110,7 @@ textarea.long {
 }
 
 ul.log {
-    list-style-type: decimal;
+    list-style-type: none;
     font-size: 12px;
     color: #5d0a94;
 }

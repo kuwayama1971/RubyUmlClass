@@ -2,11 +2,11 @@
   "version": 0.1,
   "setting_list": [
     {
-      "name": "name1",
-      "value": "value1 2 3 4",
+      "name": "plantuml",
+      "value": "plantuml -svg --charset UTF-8",
       "type": "input",
       "select": "",
-      "description": "設定項目1"
+      "description": "PlantUMLコマンド"
     },
     {
       "name": "name2",
