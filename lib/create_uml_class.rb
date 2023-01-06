@@ -1,18 +1,4 @@
-$block_start_word = [
-  "^\s*class\s",
-  "^\s*module\s",
-  #  "^\s*ensure\s?",
-  #"^\s*when\s?",
-  "^\s*def\s",
-  "^\s*while\s",
-  "^\s*for\s",
-  "\sdo\s?",
-  "\scase\s",
-  "^\s*if\s",
-  "^\s*unless\s",
-  "^\s*begin[\s\n]",
-#"^\s*until\s",
-]
+require "tempfile"
 
 def create_uml_class(in_dir, out_file)
   out = []
@@ -25,16 +11,20 @@ def create_uml_class(in_dir, out_file)
 
   Dir.glob("#{in_dir}/**/*.{rb,ru}") do |f|
     puts f
-    buf = File.binread f
-    buf.gsub!(/(([\/\"\'].*?#.*?[\/\"\'])|(?![\/\"\'])(#.+?$))/) do |m| # コメント削除
-      if m[0] == "#" and m[1] != "{"
-        #puts "comment[#{m}]"
-        "" # コメントは削除
-      else
-        #puts "not comment[#{m}]"
-        m #コメントではない
+    buf = ""
+    Tempfile.create("rufo") do |tmp_file|
+      pp tmp_file.path
+      FileUtils.cp(f, tmp_file.path)
+      open("|rufo #{tmp_file.path}") do |f|
+        if f.read =~ /error/
+          puts "rufo error #{f}"
+          return
+        else
+          buf = File.binread tmp_file.path
+        end
       end
     end
+
     #puts buf
     inherit_list = []
     composition_list = []
@@ -46,19 +36,37 @@ def create_uml_class(in_dir, out_file)
     class_name = ""
     # ソースを解析
     buf.each_line do |line|
+      next if line =~ /^$/  # 空行は対象外
+
+      # ブロックの開始/終了
+      indent_num = line.match(/^[ ]+/).to_s.size / 2
+      if block_count == indent_num
+        # 変化なし
+      elsif block_count > indent_num
+        # ブロックの終了
+        block_count = indent_num
+      else
+        # ブロックの開始
+        block_count = indent_num
+      end
+
+      #line.gsub!(/\".+\"/, "\"delete_string\"") # 文字列を削除
       if line =~ /^\s*class\s/
         unless line =~ /<</ # 特異クラスではない
           work = line.gsub(/class\s/, "")
-          class_name = work.split("<")[0]
-          base_name = work.split("<")[1]
-          if base_name != nil
+          class_name = work.split("<")[0].to_s.chomp.match(/[A-Z][A-Za-z0-9_]+/).to_s
+          base_name = work.split("<")[1].to_s.chomp.match(/[A-Z][A-Za-z0-9_]+/).to_s
+          if base_name != ""
             inherit_list.push "#{class_name} --|> #{base_name}"
           end
           class_list.push [:class, class_name, block_count, [], []]
         end
+        next
       elsif line =~ /^\s*module\s/
-        module_name = line.split(" ")[1]
+        module_name = line.split(" ")[1].to_s.chomp
+        module_name.gsub!(/^[:]+/, "")
         class_list.push [:module, module_name, block_count, [], []]
+        next
       end
 
       if line =~ /^\s*def\s/
@@ -84,8 +92,6 @@ def create_uml_class(in_dir, out_file)
             method_list.push "# #{method}"
           end
         else
-          p line
-          pp class_list
           main_method_list.push "+ #{method}"
         end
       end
@@ -93,10 +99,13 @@ def create_uml_class(in_dir, out_file)
       # composition_list
       line.match(/(([\/\"\')].*?\.new.*?[\/\"\'])|(?![\/\"\'])([a-zA-Z0-9_]+\.new))/) do |m|
         if m.to_s[0] != "/" and m.to_s[0] != "\"" and m.to_s[0] != "'"
-          if class_list.size != 0
-            composition_list.push "#{class_list[-1][1]} *-- #{m.to_s.gsub(/\.new/, "")}"
-          else
-            main_composition_list.push "main *-- #{m.to_s.gsub(/\.new/, "")}"
+          name = m.to_s.gsub(/\.new/, "").match(/[A-Z][A-Za-z0-9_]+/).to_s
+          if name != ""
+            if class_list.size != 0
+              composition_list.push "#{class_list[-1][1]} *-- #{name}"
+            else
+              main_composition_list.push "main *-- #{name}"
+            end
           end
         end
       end
@@ -124,20 +133,9 @@ def create_uml_class(in_dir, out_file)
         global_var.push "+ #{m.to_s}"
       }
 
-      # ブロックの開始
-      $block_start_word.each do |w|
-        if line =~ Regexp.new(w)
-          block_count += 1
-        end
-      end
-
-      # ブロックの終了
-      if line =~ /^\s*end[\s\n\.]/
-        block_count -= 1
-      end
-
       # クラスの終了
       if class_list.size != 0
+        puts "#{block_count} #{line.chomp}"
         #puts "#{block_count} #{line.chomp} <=> #{class_list[-1][2]}"
         if block_count == class_list[-1][2] # block_countが一致
           puts "end of #{class_list[-1][1]}"
@@ -149,15 +147,21 @@ def create_uml_class(in_dir, out_file)
           class_list.slice!(-1) # 最後の要素を削除
         end
       end
-      puts "#{block_count} #{line.chomp}"
+      #puts "#{block_count} #{line.chomp}"
+    end
+    if block_count != 0
+      # エラー
+      puts f
+      return ""
     end
 
     # namespaceの開始
     out_module_list.reverse.each do |m_list|
       instance_var = m_list[3]
+      method_list = m_list[4]
       out.push "namespace #{m_list[1]} {"
       # インスタンス変数がある場合はモジュール名と同じクラスを定義
-      if instance_var.size != 0
+      if instance_var.size != 0 or method_list.size != 0
         out.push "class #{m_list[1]} {"
       end
       # インスタンス変数の出力
@@ -167,13 +171,12 @@ def create_uml_class(in_dir, out_file)
         end
       end
       # メソッドの出力
-      method_list = m_list[4]
       if method_list != nil
         method_list.each do |ml|
           out.push ml
         end
       end
-      if instance_var.size != 0
+      if instance_var.size != 0 or method_list.size != 0
         out.push "}"
       end
     end
