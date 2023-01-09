@@ -1,5 +1,97 @@
 require "tempfile"
 
+CStruct = Struct.new(:type,
+                     :name,
+                     :block_count,
+                     :var_list,
+                     :method_list,
+                     :inherit_list,
+                     :composition_list)
+
+def print_uml(out, out_list)
+  out_list.each do |o_list|
+    if o_list.type == :class_start
+      # nop
+    elsif o_list.type == :module_start
+      out.push "namespace #{o_list.name} {"
+    elsif o_list.type == :class_end
+      pp o_list if o_list.name == ""
+      out.push "class #{o_list.name} {"
+      # インスタンス変数の出力
+      o_list.var_list.uniq.each do |iv|
+        out.push iv
+      end
+      # メソッドの出力
+      o_list.method_list.each do |ml|
+        out.push ml
+      end
+      out.push "}"
+      # 継承リストの出力
+      o_list.inherit_list.each do |ih|
+        out.push "#{o_list.name} --|> #{ih}"
+      end
+      # compo
+      o_list.composition_list.uniq.each do |co|
+        out.push "#{o_list.name} *-- #{co}"
+      end
+    elsif o_list.type == :module_end
+      # インスタンス変数がある場合はモジュール名と同じクラスを定義
+      if o_list.var_list.size != 0 or
+         o_list.method_list.size != 0 or
+         o_list.inherit_list.size != 0 or
+         o_list.composition_list.size != 0
+        pp o_list if o_list.name == ""
+        out.push "class #{o_list.name} {"
+        # インスタンス変数の出力
+        o_list.var_list.uniq.each do |iv|
+          out.push iv
+        end
+        # メソッドの出力
+        o_list.method_list.each do |ml|
+          out.push ml
+        end
+        out.push "}"
+        # 継承リストの出力
+        o_list.inherit_list.each do |ih|
+          out.push "#{o_list.name} --|> #{ih}"
+        end
+        # compo
+        o_list.composition_list.uniq.each do |co|
+          out.push "#{o_list.name} *-- #{co}"
+        end
+      end
+      out.push "}"
+    else
+      # error
+      puts "error!"
+    end
+  end
+  return out
+end
+
+def delete_here_doc(buf)
+  new_buf = []
+  here_doc = false
+  here_word = ""
+  buf.each_line do |line|
+    if line =~ /(<<|<<~|<<-)[A-Z]+/
+      here_doc = true
+      here_word = line.match(/(<<|<<~|<<-)[A-Z]+/).to_s.gsub(/[<~-]/, "")
+    end
+    if here_word != "" and line =~ Regexp.new("^\s*#{here_word}$")
+      here_word = ""
+      here_doc = false
+      pp line
+    end
+    if here_doc == false
+      new_buf.push line
+    else
+      pp line
+    end
+  end
+  return new_buf.join("")
+end
+
 def create_uml_class(in_dir, out_file)
   out = []
   out.push "@startuml"
@@ -13,7 +105,6 @@ def create_uml_class(in_dir, out_file)
     puts f
     buf = ""
     Tempfile.create("rufo") do |tmp_file|
-      pp tmp_file.path
       FileUtils.cp(f, tmp_file.path)
       open("|rufo #{tmp_file.path}") do |f|
         if f.read =~ /error/
@@ -25,12 +116,23 @@ def create_uml_class(in_dir, out_file)
       end
     end
 
-    #puts buf
-    inherit_list = []
-    composition_list = []
-    out_class_list = []
-    out_module_list = []
-    class_list = []
+    # コメント削除
+    buf.gsub!(/(([\/\"\'].*?[\/\"\'])|([^\/\"\'\)\s]*#.+?$))/) do |m|
+      if m[0] == "#" and m[0] != "{"
+        #puts "comment #{m}"
+        # コメント
+        ""
+      else
+        #puts "not comment #{m}"
+        # コメント以外
+        m
+      end
+    end
+    # ヒアドキュメント削除
+    buf = delete_here_doc(buf)
+
+    out_list = []
+    cstruct_list = []
     block_count = 0
     method_type = :public
     class_name = ""
@@ -56,17 +158,28 @@ def create_uml_class(in_dir, out_file)
           work = line.gsub(/class\s/, "")
           class_name = work.split("<")[0].to_s.chomp.match(/[A-Z][A-Za-z0-9_]+/).to_s
           base_name = work.split("<")[1].to_s.chomp.match(/[A-Z][A-Za-z0-9_]+/).to_s
+          out_list.push CStruct.new(:class_start, class_name, block_count, [], [], [], [])
+          cstruct_list.push CStruct.new(:class_end, class_name, block_count, [], [], [], [])
+          pp line if class_name == ""
           if base_name != ""
-            inherit_list.push "#{class_name} --|> #{base_name}"
+            cstruct_list[-1].inherit_list.push base_name
           end
-          class_list.push [:class, class_name, block_count, [], []]
         end
-        next
+        next unless line =~ /end\s*$/ # 1行で終了しない場合
       elsif line =~ /^\s*module\s/
         module_name = line.split(" ")[1].to_s.chomp
         module_name.gsub!(/^[:]+/, "")
-        class_list.push [:module, module_name, block_count, [], []]
-        next
+        out_list.push CStruct.new(:module_start, module_name, block_count, [], [], [], [])
+        cstruct_list.push CStruct.new(:module_end, module_name, block_count, [], [], [], [])
+        next unless line =~ /end\s*$/ # 1行で終了しない場合
+      end
+
+      if line =~ /^\s*private$/
+        method_type = :private
+      elsif line =~ /^\s*protected$/
+        method_type = :protected
+      elsif line =~ /^\s*public$/
+        method_type = :public
       end
 
       if line =~ /^\s*def\s/
@@ -81,8 +194,8 @@ def create_uml_class(in_dir, out_file)
             method = method + "()"
           end
         end
-        if class_list.size != 0
-          method_list = class_list[-1][4]
+        if cstruct_list.size != 0
+          method_list = cstruct_list[-1].method_list
           case method_type
           when :public
             method_list.push "+ #{method}"
@@ -101,8 +214,8 @@ def create_uml_class(in_dir, out_file)
         if m.to_s[0] != "/" and m.to_s[0] != "\"" and m.to_s[0] != "'"
           name = m.to_s.gsub(/\.new/, "").match(/[A-Z][A-Za-z0-9_]+/).to_s
           if name != ""
-            if class_list.size != 0
-              composition_list.push "#{class_list[-1][1]} *-- #{name}"
+            if cstruct_list.size != 0
+              cstruct_list[-1].composition_list.push name
             else
               main_composition_list.push "main *-- #{name}"
             end
@@ -112,9 +225,9 @@ def create_uml_class(in_dir, out_file)
 
       # インスタンス変数
       if line =~ /\s*@\S+/
-        if class_list.size != 0
+        if cstruct_list.size != 0
           line.match(/@[a-zA-Z0-9_]+/) { |m|
-            instance_var = class_list[-1][3]
+            instance_var = cstruct_list[-1].var_list
             val = m.to_s.gsub(/@/, "")
             case method_type
             when :public
@@ -134,17 +247,11 @@ def create_uml_class(in_dir, out_file)
       }
 
       # クラスの終了
-      if class_list.size != 0
-        puts "#{block_count} #{line.chomp}"
-        #puts "#{block_count} #{line.chomp} <=> #{class_list[-1][2]}"
-        if block_count == class_list[-1][2] # block_countが一致
-          puts "end of #{class_list[-1][1]}"
-          if class_list[-1][0] == :class
-            out_class_list.push class_list[-1]
-          else
-            out_module_list.push class_list[-1]
-          end
-          class_list.slice!(-1) # 最後の要素を削除
+      if cstruct_list.size != 0
+        if block_count == cstruct_list[-1].block_count # block_countが一致
+          #puts "end of #{cstruct_list[-1].name}"
+          out_list.push cstruct_list[-1]
+          cstruct_list.slice!(-1) # 最後の要素を削除
         end
       end
       #puts "#{block_count} #{line.chomp}"
@@ -155,68 +262,13 @@ def create_uml_class(in_dir, out_file)
       return ""
     end
 
-    # namespaceの開始
-    out_module_list.reverse.each do |m_list|
-      instance_var = m_list[3]
-      method_list = m_list[4]
-      out.push "namespace #{m_list[1]} {"
-      # インスタンス変数がある場合はモジュール名と同じクラスを定義
-      if instance_var.size != 0 or method_list.size != 0
-        out.push "class #{m_list[1]} {"
-      end
-      # インスタンス変数の出力
-      if instance_var != nil
-        instance_var.uniq.each do |iv|
-          out.push iv
-        end
-      end
-      # メソッドの出力
-      if method_list != nil
-        method_list.each do |ml|
-          out.push ml
-        end
-      end
-      if instance_var.size != 0 or method_list.size != 0
-        out.push "}"
-      end
-    end
-
-    # クラスの出力
-    out_class_list.reverse.each do |c_list|
-      out.push "class #{c_list[1]} {"
-      # インスタンス変数の出力
-      instance_var = c_list[3]
-      if instance_var != nil
-        instance_var.uniq.each do |iv|
-          out.push iv
-        end
-      end
-      # メソッドの出力
-      method_list = c_list[4]
-      if method_list != nil
-        method_list.each do |ml|
-          out.push ml
-        end
-      end
-      out.push "}"
-    end
-
-    # 継承リストの出力
-    inherit_list.each do |il|
-      out.push il
-    end
-    # composition_listの出力
-    composition_list.uniq.each do |cl|
-      out.push cl
-    end
-
-    # namespaceの終了
-    out_module_list.reverse.each do |m_list|
-      out.push "}"
-    end
+    # UMLの出力
+    out = print_uml(out, out_list)
   end
 
-  if main_method_list.size != 0
+  if main_method_list.size != 0 or
+     main_composition_list.size != 0 or
+     main_method_list.size != 0
     out.push "class main {"
     main_method_list.each do |mml|
       out.push mml
@@ -226,7 +278,7 @@ def create_uml_class(in_dir, out_file)
       out.push gv
     end
     out.push "}"
-    main_composition_list.each do |mcl|
+    main_composition_list.uniq.each do |mcl|
       out.push mcl
     end
   end
