@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Create a Ruby UML class diagram."
   spec.description = "Create a Ruby UML class diagram with PlangUml."
-  spec.homepage = "https://rubygems.org/gems/browser_app_base"
+  spec.homepage = "https://github.com/kuwayama1971/RubyUmlClass"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.6.0"
 
@@ -28,7 +28,7 @@ Gem::Specification.new do |spec|
     end
   end
   spec.bindir = "bin"
-  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
+  spec.executables = spec.files.grep("bin/") { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
   # Uncomment to register a new dependency of your gem
