@@ -33,11 +33,11 @@ hr {
     border: thin solid #000000;
     margin: 5px;
     padding: 5px;
-    width: 95%;
+    width: 98%;
 }
 
 input.long {
-    width: 90%;
+    width: 98%;
     background-color: #FAFAFA;
     margin: 5px;
     padding: 5px;
@@ -88,31 +88,31 @@ textarea.long {
 }
 
 #setting_dialog {
-    color: #796fe9;
+    color: #ffffff;
     background-color: #000000;
 }
 
 .setting_name {
     width: 200px;
-    color: #796fe9;
+    color: #ffffff;
     background-color: #000000;
 }
 
 .setting_value {
     width: 300px;
-    color: #796fe9;
+    color: #ffffff;
     background-color: #000000;
 }
 
 .setting_checkbox {
-    color: #796fe9;
+    color: #ffffff;
     background-color: #000000;
 }
 
 ul.log {
     list-style-type: none;
     font-size: 12px;
-    color: #5d0a94;
+    color: #000000;
 }
 
 input[type="search"] {

@@ -111,9 +111,11 @@ class WsServer < Sinatra::Base
           end
           if msg =~ /^openfile:/
             file = msg.gsub(/^openfile:/, "")
-            Thread.new {
-              system "#{json_config["editor"]} #{CGI.unescapeHTML(file)}"
-            }
+            if file != ""
+              Thread.new {
+                system "#{json_config["editor"]} #{CGI.unescapeHTML(file)}"
+              }
+            end
           end
 
           # アプリケーション終了

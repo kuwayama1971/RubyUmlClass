@@ -4,7 +4,7 @@ require_relative "lib/ruby_uml_class/version"
 
 Gem::Specification.new do |spec|
   spec.name = "ruby_uml_class"
-  spec.version = RubyUmlClass::VERSION
+  spec.version = RubyUmlClassVer::VERSION
   spec.authors = ["Masataka kuwayama"]
   spec.email = ["masataka.kuwayama@gmail.com"]
 
@@ -35,6 +35,7 @@ Gem::Specification.new do |spec|
   # spec.add_dependency "example-gem", "~> 1.0"
 
   spec.add_development_dependency "browser_app_base"
+  spec.add_development_dependency "rufo"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html

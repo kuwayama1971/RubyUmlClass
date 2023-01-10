@@ -9,45 +9,11 @@
       "description": "PlantUMLコマンド"
     },
     {
-      "name": "name2",
-      "value": true,
-      "type": "checkbox",
-      "select": "",
-      "description": "有効にする場合はチェック"
-    },
-    {
-      "name": "name3",
-      "value": "3",
-      "type": "select",
-      "select": [
-        "1",
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
-      "description": "選択項目"
-    },
-    {
-      "name": "name4",
-      "value": "value4",
+      "name": "editor",
+      "value": "code",
       "type": "input",
       "select": "",
-      "description": "設定項目4"
-    },
-    {
-      "name": "name5",
-      "value": "value5",
-      "type": "input",
-      "select": "",
-      "description": "設定項目5"
-    },
-    {
-      "name": "name6",
-      "value": "value6",
-      "type": "input",
-      "select": "",
-      "description": "設定項目6"
+      "description": "UMLを開くエディタ"
     }
   ]
 }

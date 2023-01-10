@@ -156,12 +156,20 @@ def create_uml_class(in_dir, out_file)
       if line =~ /^\s*class\s/
         unless line =~ /<</ # 特異クラスではない
           work = line.gsub(/class\s/, "")
-          class_name = work.split("<")[0].to_s.chomp.match(/[A-Z][A-Za-z0-9_]+/).to_s
-          base_name = work.split("<")[1].to_s.chomp.match(/[A-Z][A-Za-z0-9_]+/).to_s
-          out_list.push CStruct.new(:class_start, class_name, block_count, [], [], [], [])
-          cstruct_list.push CStruct.new(:class_end, class_name, block_count, [], [], [], [])
+          class_name = work.split("<")[0].to_s.chomp.match(/[A-Z][A-Za-z0-9_:]+/).to_s
+          base_name = work.split("<")[1].to_s.chomp.match(/[A-Z][A-Za-z0-9_:]+/).to_s
+          class_name.gsub!(/::/, ".")
+          if out_list.size != 0 and out_list[-1].type == :class_start # classが連続している
+            class_name = out_list[-1].name + "." + class_name
+            out_list[-1].name = class_name
+            cstruct_list[-1].name = class_name
+          else
+            out_list.push CStruct.new(:class_start, class_name, block_count, [], [], [], [])
+            cstruct_list.push CStruct.new(:class_end, class_name, block_count, [], [], [], [])
+          end
           pp line if class_name == ""
           if base_name != ""
+            #base_name.gsub!(/::/, ".")
             cstruct_list[-1].inherit_list.push base_name
           end
         end
@@ -169,6 +177,7 @@ def create_uml_class(in_dir, out_file)
       elsif line =~ /^\s*module\s/
         module_name = line.split(" ")[1].to_s.chomp
         module_name.gsub!(/^[:]+/, "")
+        module_name.gsub!(/::/, ".")
         out_list.push CStruct.new(:module_start, module_name, block_count, [], [], [], [])
         cstruct_list.push CStruct.new(:module_end, module_name, block_count, [], [], [], [])
         next unless line =~ /end\s*$/ # 1行で終了しない場合
