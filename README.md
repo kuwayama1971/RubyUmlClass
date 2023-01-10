@@ -4,7 +4,6 @@ RubyUmlClass creates a Ruby class diagram.
 PlantUML and rufo commands are used to create class diagrams.
 The created class diagram is displayed on the browser screen.
 
-
 ## Setup
     for ubuntu
     $ sudo apt install plantuml
