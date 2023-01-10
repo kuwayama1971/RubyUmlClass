@@ -1,6 +1,8 @@
 # RubyUmlClass
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/ruby_uml_class`. To experiment with that code, run `bin/console` for an interactive prompt.
+RubyUmlClass creates a Ruby class diagram.
+PlantUML and rufo commands are used to create class diagrams.
+The created class diagram is displayed on the browser screen.
 
 ## Setup
     for ubuntu
