@@ -26,7 +26,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/ruby_uml_class.
+Bug reports and pull requests are welcome on GitHub at https://github.com/kuwayama1971/RubyUmlClass.
 
 ## License
 
