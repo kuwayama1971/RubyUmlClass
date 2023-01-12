@@ -8,6 +8,13 @@ The created class diagram is displayed on the browser screen.
     for ubuntu
     $ sudo apt install plantuml
 
+    for windoes  
+    install java and PlanUML  
+    PlantUML of vscode extension function is also possible  
+    
+    Set [RubyUmlClass=>Setting=>PlantUML Command] as follows   
+    "java -jar C:/Users/%USERNAME%/.vscode/extensions/jebbs.plantuml-2.17.5/plantuml.jar  -svg --charset UTF-8"  
+
 ## Installation
 
 Install the gem and add to the application's Gemfile by executing:
