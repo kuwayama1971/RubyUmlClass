@@ -138,7 +138,7 @@ def create_uml_class(in_dir, out_file)
     class_name = ""
     # ソースを解析
     buf.each_line do |line|
-      next if line =~ /^$/  # 空行は対象外
+      next if line =~ /^[\r\n]*$/  # 空行は対象外
 
       # ブロックの開始/終了
       indent_num = line.match(/^[ ]+/).to_s.size / 2
@@ -167,7 +167,7 @@ def create_uml_class(in_dir, out_file)
             out_list.push CStruct.new(:class_start, class_name, block_count, [], [], [], [])
             cstruct_list.push CStruct.new(:class_end, class_name, block_count, [], [], [], [])
           end
-          pp line if class_name == ""
+          #pp line if class_name == ""
           if base_name != ""
             #base_name.gsub!(/::/, ".")
             cstruct_list[-1].inherit_list.push base_name
