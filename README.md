@@ -10,6 +10,7 @@ The created class diagram is displayed on the browser screen.
 
     for windoes  
     install java and PlanUML  
+    Set java and plantuml.jar in [PlantUML Command]  
     PlantUML of vscode extension function is also possible  
     
     Set [RubyUmlClass=>Setting=>PlantUML Command] as follows   
