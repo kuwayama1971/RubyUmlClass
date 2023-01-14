@@ -109,7 +109,7 @@ def create_uml_class(in_dir, out_file)
       FileUtils.cp(f, tmp_file.path)
       kernel = Facter.value(:kernel)
       if kernel == "windows"
-        open("|rufo.bat #{tmp_file.path}") do |f|
+        open("|rubyw rufo #{tmp_file.path}") do |f|
           if f.read =~ /error/
             puts "rufo error #{f}"
             return
