@@ -1,4 +1,5 @@
 require "tempfile"
+require "facter"
 
 CStruct = Struct.new(:type,
                      :name,
@@ -106,12 +107,24 @@ def create_uml_class(in_dir, out_file)
     buf = ""
     Tempfile.create("rufo") do |tmp_file|
       FileUtils.cp(f, tmp_file.path)
-      open("|rufo #{tmp_file.path}") do |f|
-        if f.read =~ /error/
-          puts "rufo error #{f}"
-          return
-        else
-          buf = File.binread tmp_file.path
+      kernel = Facter.value(:kernel)
+      if kernel == "windows"
+        open("|rufo.bat #{tmp_file.path}") do |f|
+          if f.read =~ /error/
+            puts "rufo error #{f}"
+            return
+          else
+            buf = File.binread tmp_file.path
+          end
+        end
+      else
+        open("|rufo #{tmp_file.path}") do |f|
+          if f.read =~ /error/
+            puts "rufo error #{f}"
+            return
+          else
+            buf = File.binread tmp_file.path
+          end
         end
       end
     end
