@@ -34,8 +34,9 @@ Gem::Specification.new do |spec|
   # Uncomment to register a new dependency of your gem
   # spec.add_dependency "example-gem", "~> 1.0"
 
-  spec.add_development_dependency "browser_app_base"
-  spec.add_development_dependency "rufo"
+  spec.add_dependency "browser_app_base", "~> 0.1"
+  spec.add_dependency "rufo", "~> 0.1"
+  spec.add_dependency "facter", "~> 4.2"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
