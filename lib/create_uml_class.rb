@@ -9,6 +9,16 @@ CStruct = Struct.new(:type,
                      :inherit_list,
                      :composition_list)
 
+def get_rufo_path
+  ENV["PATH"].split(";").each do |path|
+    rufo_path = "#{path}\\rufo"
+    if File.exists? rufo_path
+      return rufo_path
+    end
+  end
+  return ""
+end
+
 def print_uml(out, out_list)
   out_list.each do |o_list|
     if o_list.type == :class_start
@@ -109,7 +119,7 @@ def create_uml_class(in_dir, out_file)
       FileUtils.cp(f, tmp_file.path)
       kernel = Facter.value(:kernel)
       if kernel == "windows"
-        open("|rubyw rufo #{tmp_file.path}") do |f|
+        open("|rubyw #{get_rufo_path} #{tmp_file.path}") do |f|
           if f.read =~ /error/
             puts "rufo error #{f}"
             return
@@ -172,6 +182,7 @@ def create_uml_class(in_dir, out_file)
           class_name = work.split("<")[0].to_s.chomp.match(/[A-Z][A-Za-z0-9_:]+/).to_s
           base_name = work.split("<")[1].to_s.chomp.match(/[A-Z][A-Za-z0-9_:]+/).to_s
           class_name.gsub!(/::/, ".")
+          class_name.gsub!(/;/, "")
           if out_list.size != 0 and out_list[-1].type == :class_start # classが連続している
             class_name = out_list[-1].name + "." + class_name
             out_list[-1].name = class_name
@@ -191,6 +202,7 @@ def create_uml_class(in_dir, out_file)
         module_name = line.split(" ")[1].to_s.chomp
         module_name.gsub!(/^[:]+/, "")
         module_name.gsub!(/::/, ".")
+        module_name.gsub!(/;/, "")
         out_list.push CStruct.new(:module_start, module_name, block_count, [], [], [], [])
         cstruct_list.push CStruct.new(:module_end, module_name, block_count, [], [], [], [])
         next unless line =~ /end\s*$/ # 1行で終了しない場合
