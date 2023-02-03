@@ -92,12 +92,12 @@ def delete_here_doc(buf)
     if here_word != "" and line =~ Regexp.new("^\s*#{here_word}$")
       here_word = ""
       here_doc = false
-      pp line
+      #pp line
     end
     if here_doc == false
       new_buf.push line
     else
-      pp line
+      #pp line
     end
   end
   return new_buf.join("")
@@ -113,6 +113,10 @@ def create_uml_class(in_dir, out_file)
   global_var = []
 
   Dir.glob("#{in_dir}/**/*.{rb,ru}") do |f|
+    if f =~ Regexp.new(@config["exclude_path"])
+      puts "skip #{f}"
+      next
+    end
     puts f
     buf = ""
     Tempfile.create("rufo") do |tmp_file|
@@ -244,16 +248,13 @@ def create_uml_class(in_dir, out_file)
       end
 
       # composition_list
-      line.match(/(([\/\"\')].*?\.new.*?[\/\"\'])|(?![\/\"\'])([a-zA-Z0-9_]+\.new))/) do |m|
-        if m.to_s[0] != "/" and m.to_s[0] != "\"" and m.to_s[0] != "'"
-          name = m.to_s.gsub(/\.new/, "").match(/[A-Z][A-Za-z0-9_]+/).to_s
-          if name != ""
-            if cstruct_list.size != 0
-              cstruct_list[-1].composition_list.push name
-            else
-              main_composition_list.push "main *-- #{name}"
-            end
-          end
+      line.match(/[A-Z]([a-zA-Z:]+)\.[a-z]/) do |m|
+        #pp m
+        c_name = m.to_s.split(".")[0]
+        if cstruct_list.size != 0
+          cstruct_list[-1].composition_list.push c_name
+        else
+          main_composition_list.push "main *-- #{c_name}"
         end
       end
 

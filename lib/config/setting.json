@@ -1,5 +1,5 @@
 {
-  "version": 0.1,
+  "version": 0.2,
   "setting_list": [
     {
       "name": "plantuml",
@@ -14,6 +14,13 @@
       "type": "input",
       "select": "",
       "description": "UMLを開くエディタ"
+    },
+    {
+      "name": "exclude_path",
+      "value": "(/test/)",
+      "type": "input",
+      "select": "",
+      "description": "除外するパス（正規表現）"
     }
   ]
 }
