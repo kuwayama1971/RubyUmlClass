@@ -12,7 +12,7 @@ CStruct = Struct.new(:type,
 def get_rufo_path
   ENV["PATH"].split(";").each do |path|
     rufo_path = "#{path}\\rufo"
-    if File.exists? rufo_path
+    if File.exist? rufo_path
       return rufo_path
     end
   end
