@@ -53,6 +53,16 @@ class Search < Sinatra::Base
       data["value"] = File.expand_path(file)
       res.push data
     end
+    if 0 == res.select { |dir| dir["label"] == "../" }.size
+      data = {}
+      pp = Pathname(File.expand_path("#{dir}/#{file}"))
+      data["label"] = "../"
+      data["label"] += "/" if pp.parent == "/"
+      data["value"] = pp.parent.to_s
+      data["value"] = "/" if data["value"] =~ /^[\/]+$/
+      #puts "value = #{pp.parent.to_s}"
+      res.push data
+    end
     JSON.generate res.sort { |a, b| a["value"] <=> b["value"] }
   end
 end
