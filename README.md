@@ -41,7 +41,7 @@ $ gem install ruby_uml_class
 $ start_ruby_uml_class.rb
 ```
 
-[RubyUmlClass](img/RubyUmlClass.mp4)
+![RubyUmlClass](img/RubyUmlClass.gif)
 
 ---
 
